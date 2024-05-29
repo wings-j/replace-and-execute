@@ -11,7 +11,7 @@ Settings in the `appsetting.json`.
     {
       "name": "module-name",
       "path": "C:/Users/me/path/to/project",
-      "pre": ["Stop-Service"", "-Name service-name"],
+      "pre": ["Stop-Service", "-Name service-name"],
       "post": ["Start-Service", "-Name service-name"]
     }
   ]
