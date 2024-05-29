@@ -18,6 +18,8 @@ Settings in the `appsetting.json`.
 }
 ```
 
+The `port` means the server port.
+
 In `modules` section, many modules configurations can be set.
 
 # Update
