@@ -10,17 +10,28 @@ namespace replace_and_execute.Controllers
     /// </summary>
     [ApiController]
     [Route("[controller]")]
-    public class Api(IConfiguration configuration) : ControllerBase
+    public class Api : ControllerBase
     {
+        readonly IConfiguration configuration;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public Api(IConfiguration configuration)
+        {
+            this.configuration = configuration;
+        }
+
         /// <summary>
         /// ExecudeCommand
         /// </summary>
         /// <param name="commands">Commands</param>
         private static List<String> ExecuteCommand(String[] commands, String cwd)
         {
-            List<String> outputs = [];
-
-            outputs.Add("[Commands Execution Start]");
+            List<String> outputs = new()
+            {
+                "[Commands Execution Start]"
+            };
             var process = Process.Start(new ProcessStartInfo(commands[0], commands[1] ?? "") { RedirectStandardOutput = true, WorkingDirectory = cwd });
             if(process == null)
             {
@@ -61,7 +72,7 @@ namespace replace_and_execute.Controllers
             var module = configuration.GetSection("modules").Get<List<Module>>()?.Find((a) => a.Name == name);
             if(module != null)
             {
-                List<String> outputs = [];
+                List<String> outputs = new();
 
                 if(module.Pre.Length > 0)
                 {
