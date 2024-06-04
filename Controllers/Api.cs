@@ -1,7 +1,7 @@
+using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.AspNetCore.Mvc;
 using replace_and_execute.Types;
 using System.Diagnostics;
-using System.IO.Compression;
 
 namespace replace_and_execute.Controllers
 {
@@ -26,9 +26,9 @@ namespace replace_and_execute.Controllers
         /// ExecudeCommand
         /// </summary>
         /// <param name="commands">Commands</param>
-        private static List<String> ExecuteCommand(String[] commands, String cwd)
+        private static List<string> ExecuteCommand(string[] commands, string cwd)
         {
-            List<String> outputs = new()
+            List<string> outputs = new()
             {
                 "[Commands Execution Start]"
             };
@@ -67,12 +67,12 @@ namespace replace_and_execute.Controllers
         /// <param name="file">File</param>
         /// <returns>Action Result</returns>
         [HttpPost("Update")]
-        public async Task<ActionResult<List<String>>> PostUpdate([FromForm] string name, [FromForm] IFormFile file)
+        public async Task<ActionResult<List<string>>> PostUpdate([FromForm] string name, [FromForm] IFormFile file)
         {
             var module = configuration.GetSection("modules").Get<List<Module>>()?.Find((a) => a.Name == name);
             if(module != null)
             {
-                List<String> outputs = new();
+                List<string> outputs = new();
 
                 if(module.Pre.Length > 0)
                 {
@@ -86,30 +86,24 @@ namespace replace_and_execute.Controllers
                     await file.CopyToAsync(stream);
                 };
 
-                try
+                using(var zipInputStream = new ZipInputStream(file.OpenReadStream()))
                 {
-                    using var archive = ZipFile.OpenRead(tempFilePath);
-                    foreach(var entry in archive.Entries)
+                    ZipEntry entry;
+                    while((entry = zipInputStream.GetNextEntry()) != null)
                     {
-                        var entryDestinationPath = Path.Combine(module.Path, entry.FullName);
-                        if(entry.FullName.EndsWith('/'))
+                        var directoryName = Path.GetDirectoryName(entry.Name);
+                        var fileName = Path.GetFileName(entry.Name);
+                        var directoryFullPath = Path.Combine(module.Path, directoryName ?? "");
+                        var fileFullPath = Path.Combine(module.Path, entry.Name);
+                        if(!Directory.Exists(directoryFullPath))
                         {
-                            Directory.CreateDirectory(entryDestinationPath);
+                            Directory.CreateDirectory(directoryFullPath);
                         }
-                        else
+                        if(!string.IsNullOrEmpty(fileName))
                         {
-                            Directory.CreateDirectory(Path.GetDirectoryName(entryDestinationPath)!);
-                            using var entryStream = entry.Open();
-                            using var fileStream = new FileStream(entryDestinationPath, FileMode.Create);
-                            await entryStream.CopyToAsync(fileStream);
+                            using var streamWriter = System.IO.File.Create(fileFullPath);
+                            zipInputStream.CopyTo(streamWriter);
                         }
-                    }
-                }
-                finally
-                {
-                    if(System.IO.File.Exists(tempFilePath))
-                    {
-                        System.IO.File.Delete(tempFilePath);
                     }
                 }
 
